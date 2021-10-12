@@ -1,6 +1,7 @@
 # React web app for friend list
 
 ```javascript
+git clone https://github.com/rao123dk/friend-list.git
 cd friend-list
 npm i
 npm start
