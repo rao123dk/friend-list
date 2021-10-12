@@ -1,33 +1,11 @@
 //import logo from './logo.svg';
 import './App.css';
-import { useState, useEffect }  from 'react';
+import { useState, useEffect, useMemo }  from 'react';
 
 import List from './Components/List/List';
 import Pagination from './Components/Pagination/Pagination';
 import ToggleSwitch from './Components/ToggleButton/ToggleButton';
 
-// const defaultFriendList= [
-//   {
-//     name: "Dheeraj",
-//     isFav: false,
-//     id:1
-//   },
-//   {
-//     name: "Tony stark",
-//     isFav: false,
-//     id:2
-//   },
-//   {
-//     name: "ABC",
-//     isFav: false,
-//     id:3
-//   },
-//   {
-//     name: "Dhiraj",
-//     isFav: true,
-//     id:4
-//   },
-// ]
 
 import defaultFriendList from "./MOCK_DATA.json";
 
@@ -35,15 +13,39 @@ function App() {
   const [searchText, setSearchText] = useState('');
   const [friendList, setFriendList] = useState([]);
   const [filteredFriendList, setFilteredFriendList] = useState([]);
-
+  const [sortByfav, setSortByfav] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const PageSize=4;
   useEffect(()=>{
     setFriendList(defaultFriendList)
   },[])
 
+  useEffect(()=>{
+    if(!sortByfav) {
+      setFriendList([...defaultFriendList])
+    } else{
+      const sortedData = friendList.sort(function(x, y) {
+        let a1=x.isFav ? 0 : 1
+        let b1=y.isFav? 0 : 1
+        return a1-b1
+      });
+      setFriendList([...sortedData])
+    }
+  },[sortByfav])
+
+  // useEffect(()=>{
+  //   console.log('currentPage: ', currentPage);
+  // },[currentPage])
+
+  const currentTableData = useMemo(() => {
+    const firstPageIndex = (currentPage - 1) * PageSize;
+    const lastPageIndex = firstPageIndex + PageSize;
+    return (filteredFriendList.length ? filteredFriendList : friendList).slice(firstPageIndex, lastPageIndex);
+  }, [currentPage, friendList,filteredFriendList]);
+
+
   const handleNameChange = (event)=> {
-   //console.log('event: ', event.target.value);
     let enteredValue = event.target.value;
-    //console.log('enteredValue: ', enteredValue, enteredValue.trim().length);
     setSearchText(enteredValue)
 
     if(enteredValue.trim().length === 0){
@@ -53,7 +55,7 @@ function App() {
     } else {
        //filter Item
       let filteredName = friendList.filter((item)=>{
-        console.log('item.name: ', item.name);
+        //console.log('item.name: ', item.name);
         if(item.name.toLowerCase().includes(enteredValue.toLowerCase())){
           return item;
         }
@@ -65,11 +67,9 @@ function App() {
   };
 
   const deleteFriend =(id)=>{
-    //console.log('id: ', id);
     window.alert("do you want to delete your friend?")
     let filteredName = deleteFromList(friendList, id)
     setFriendList(filteredName)
-
     filteredFriendList.length && setFilteredFriendList(deleteFromList(filteredFriendList, id))
   }
 
@@ -83,29 +83,13 @@ function App() {
 
 
   const favoriteToggle =(id)=>{
-    const updatedData = makeFavorite(friendList, id) //friendList.map(x => (x.id === id ? { ...x, isFav: !x.isFav } : x));
+    const updatedData = makeFavorite(friendList, id)
     setFriendList(updatedData)
     filteredFriendList.length && setFilteredFriendList(makeFavorite(filteredFriendList, id))
   }
 
-  const onChangePage =(item)=>{
-    console.log('item: ', item);
+  const onSortBy  = (event)=>event.target.checked ?  setSortByfav(true) : setSortByfav(false);
 
-  }
-
-  const onSortBy  = (event)=>{
-    console.log('event: ', event.target.checked);
-    if(event.target.checked){
-      const sortedData = friendList.sort(function(x, y) {
-        let a1=x.isFav ? 1 : 0
-        let b1=y.isFav? 1 : 0
-        return a1-b1
-      });
-      setFriendList(sortedData)
-      console.log('sortedData: ', sortedData);
-    }
-
-  }
 
   return (
     <>
@@ -124,11 +108,18 @@ function App() {
           />
           <div>
             <List
-              items={filteredFriendList.length ? filteredFriendList : friendList}
+              //items={filteredFriendList.length ? filteredFriendList : friendList}
+              items={currentTableData}
               onDeleteFriend={deleteFriend}
               onFavoriteToggle={favoriteToggle}
             />
-            {/* <Pagination items={friendList} onChangePage={onChangePage}/> */}
+            <Pagination
+              className="pagination-bar"
+              currentPage={currentPage}
+              totalCount={filteredFriendList.length || friendList.length}
+              pageSize={4}
+              onPageChange={page => setCurrentPage(page)}
+          />
           </div>
         </div>
       </div>

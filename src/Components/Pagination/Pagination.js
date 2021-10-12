@@ -1,112 +1,76 @@
 import React from 'react';
-import _ from 'lodash';
+import classnames from 'classnames';
+import { usePagination, DOTS } from './usePagination';
+import './styles.css';
+const Pagination = props => {
+  const {
+    onPageChange,
+    totalCount,
+    siblingCount = 1,
+    currentPage,
+    pageSize,
+    className
+  } = props;
 
-class Pagination extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = { pager: {} };
-    }
+  const paginationRange = usePagination({
+    currentPage,
+    totalCount,
+    siblingCount,
+    pageSize
+  });
 
-    componentWillMount() {
-        this.setPage(this.props.initialPage);
-    }
+  if (currentPage === 0 || paginationRange.length < 2) {
+    return null;
+  }
 
-    setPage(page) {
-        var items = this.props.items;
-        console.log('items: ', items);
-        var pager = this.state.pager;
+  const onNext = () => {
+    onPageChange(currentPage + 1);
+  };
 
-        if (page < 1 || page > pager.totalPages) {
-            return;
+  const onPrevious = () => {
+    onPageChange(currentPage - 1);
+  };
+
+  let lastPage = paginationRange[paginationRange.length - 1];
+  return (
+    <ul
+      className={classnames('pagination-container', { [className]: className })}
+    >
+      <li
+        className={classnames('pagination-item', {
+          disabled: currentPage === 1
+        })}
+        onClick={onPrevious}
+      >
+        <div className="arrow left" />
+      </li>
+      {paginationRange.map(pageNumber => {
+        if (pageNumber === DOTS) {
+          return <li key={pageNumber} className="pagination-item dots">&#8230;</li>;
         }
-
-        // get new pager object for specified page
-        pager = this.getPager(items.length, page);
-
-        // get new page of items from items array
-        var pageOfItems = items.slice(pager.startIndex, pager.endIndex + 1);
-
-        // update state
-        this.setState({ pager: pager });
-
-        // call change page function in parent component
-        this.props.onChangePage(pageOfItems);
-    }
-
-    getPager(totalItems, currentPage, pageSize) {
-        // default to first page
-        currentPage = currentPage || 1;
-
-        // default page size is 4
-        pageSize = pageSize || 4;
-
-        // calculate total pages
-        var totalPages = Math.ceil(totalItems / pageSize);
-
-        var startPage, endPage;
-        if (totalPages <= 4) {
-            // less than 4 total pages so show all
-            startPage = 1;
-            endPage = totalPages;
-        } else {
-            // more than 4 total pages so calculate start and end pages
-            if (currentPage <= 6) {
-                startPage = 1;
-                endPage = 4;
-            } else if (currentPage + 4 >= totalPages) {
-                startPage = totalPages - 9;
-                endPage = totalPages;
-            } else {
-                startPage = currentPage - 5;
-                endPage = currentPage + 4;
-            }
-        }
-
-        // calculate start and end item indexes
-        var startIndex = (currentPage - 1) * pageSize;
-        var endIndex = Math.min(startIndex + pageSize - 1, totalItems - 1);
-
-        // create an array of pages to ng-repeat in the pager control
-        var pages = _.range(startPage, endPage + 1);
-
-        // return object with all pager properties required by the view
-        return {
-            totalItems: totalItems,
-            currentPage: currentPage,
-            pageSize: pageSize,
-            totalPages: totalPages,
-            startPage: startPage,
-            endPage: endPage,
-            startIndex: startIndex,
-            endIndex: endIndex,
-            pages: pages
-        };
-    }
-
-    render() {
-        var pager = this.state.pager;
 
         return (
-            <ul className="pagination">
-                <li className={pager.currentPage === 1 ? 'disabled' : ''}>
-                    <a onClick={() => this.setPage(1)}>First</a>
-                </li>
-                <li className={pager.currentPage === 1 ? 'disabled' : ''}>
-                    <a onClick={() => this.setPage(pager.currentPage - 1)}>Previous</a>
-                </li>
-                {pager.pages.map((page, index) =>
-                    <li key={index} className={pager.currentPage === page ? 'active' : ''}>
-                        <a onClick={() => this.setPage(page)}>{page}</a>
-                    </li>
-                )}
-                <li className={pager.currentPage === pager.totalPages ? 'disabled' : ''}>
-                    <a onClick={() => this.setPage(pager.currentPage + 1)}>Next</a>
-                </li>
-                <li className={pager.currentPage === pager.totalPages ? 'disabled' : ''}>
-                    <a onClick={() => this.setPage(pager.totalPages)}>Last</a>
-                </li>
-            </ul>
+          <li key={pageNumber}
+            className={classnames('pagination-item', {
+              selected: pageNumber === currentPage
+            })}
+            onClick={() => onPageChange(pageNumber)}
+          >
+            {pageNumber}
+          </li>
         );
-    }
-}
+      })}
+      <li
+        key={"lastPage"}
+        className={classnames('pagination-item', {
+          disabled: currentPage === lastPage
+        })}
+        onClick={onNext}
+      >
+        <div className="arrow right" />
+      </li>
+    </ul>
+  );
+};
+
 export default Pagination;
